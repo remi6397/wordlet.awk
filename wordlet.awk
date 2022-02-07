@@ -2,6 +2,9 @@
 # Wordlet, a word game written in AWK and playable from the command line!
 
 BEGIN {
+    if (termcols == "")
+        termcols = 80
+
     if (wordlen == "")
         wordlen = 5
 
@@ -64,15 +67,21 @@ NF == 1 {
     }
 }
 
+function mistake(msg) {
+    print "\x1b[1A\x1b[90m\x1b[9m" $0 "\x1b[0m\x1b[" (termcols - 1 - length(msg)) "G: \x1b[3m" msg "\x1b[0m"
+}
+
 NF != wordlen {
     NR--
-    print "The word must be " wordlen " letters in length, not " NF "!"
+    msg = "the word must be " wordlen " letters in length, not " NF "!"
+    mistake(msg)
     next
 }
 
 $0 in words == 0 {
     NR--
-    print "\x1b[1m" $0 "\x1b[0m is not a word!"
+    msg = "not a word!"
+    mistake(msg)
     next
 }
 
