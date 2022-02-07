@@ -2,6 +2,8 @@
 
 Wordlesque game implemented (mostly) in AWK
 
+image::wordlet-ascii-cast.gif[]
+
 == Usage
 
 ....
