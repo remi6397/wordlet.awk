@@ -1,6 +1,30 @@
 #!/usr/bin/env -S awk -v dict=/usr/share/dict/words -v moved_color=3 -f
 # Wordlet, a word game written in AWK and playable from the command line!
 
+function mistake(msg) {
+    print "\x1b[1A\x1b[90m\x1b[9m" $0 "\x1b[0m\x1b[" (termcols - 1 - length(msg)) "G: \x1b[3m" msg "\x1b[0m"
+}
+
+function keyboard() {
+    printf "\x1b[" (tries + 2) "A"
+    printf " "
+    for (i = 65; i < 91; i++) {
+        printf "\x1b[30m[\x1b[0m"
+        _c = sprintf("%c", i)
+        if (guessed_exact[_c]) {
+            printf exact_color "\x1b[30m"
+        } else if (guessed_moved[_c]) {
+            printf moved_color "\x1b[30m"
+        } else if (guessed_miss[_c]) {
+            printf "\x1b[30m\x1b[100m\x1b[9m"
+        }
+        printf("%s\x1b[0m", _c, i)
+        printf "\x1b[30m]\x1b[0m"
+    }
+    printf "\n"
+    printf "\x1b[" (tries + 2) "B"
+}
+
 BEGIN {
     if (termcols == "")
         termcols = 80
@@ -51,7 +75,13 @@ BEGIN {
     print "==================="
     print "\x1b[0m"
     print "The objective of this game is to guess a \x1b[1m" wordlen "-letter\x1b[0m word in \x1b[1m" maxtries " tries\x1b[0m."
-    print "Press \x1b[31m^D\x1b[39m (\x1b[31mCtrl-d\x1b[39m) to give up \x1b[3m(don't)\x1b[0m.\n"
+    print "Press \x1b[31m^D\x1b[39m (\x1b[31mCtrl-d\x1b[39m) to give up \x1b[3m(don't)\x1b[0m.\n\n\n"
+
+    keyboard()
+}
+
+{
+    tries++
 }
 
 NF == 1 {
@@ -67,14 +97,11 @@ NF == 1 {
     }
 }
 
-function mistake(msg) {
-    print "\x1b[1A\x1b[90m\x1b[9m" $0 "\x1b[0m\x1b[" (termcols - 1 - length(msg)) "G: \x1b[3m" msg "\x1b[0m"
-}
-
 NF != wordlen {
     NR--
     msg = "the word must be " wordlen " letters in length, not " NF "!"
     mistake(msg)
+    keyboard()
     next
 }
 
@@ -82,6 +109,7 @@ $0 in words == 0 {
     NR--
     msg = "not a word!"
     mistake(msg)
+    keyboard()
     next
 }
 
@@ -96,13 +124,19 @@ $0 in words {
     for (i = 1; i <= NF; i++) {
         if ($i == word[i]) {
             printf exact_color "\x1b[30m"
+            guessed_exact[$i]++
         } else if (matches[$i] > 0) {
             printf moved_color "\x1b[30m"
             matches[$i]--
+            guessed_moved[$i]++
+        } else {
+            guessed_miss[$i]++
         }
         printf $i "\x1b[0m "
     }
     print ""
+
+    keyboard()
 }
 
 $0 == words[1] {
